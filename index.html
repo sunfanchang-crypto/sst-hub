@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>順時達 SST - 區域共享順路互助網</title>
+    <meta name="theme-color" content="#FF6B00">
+    <meta name="description" content="順路幫忙帶，順時送到家！三大定律科學計價、食安親簽防拆封條與法定禁品嚴密防禦互助網。">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="logo">⚡ 順時達 SST 安全科技</div>
+        <div class="status-badge">🟢 地端機皇 AI 智慧護航</div>
+    </header>
+
+    <main class="app-container">
+
+        <!-- 風控與封鎖警示卡片 -->
+        <section id="risk-alert-card" class="card risk-card" style="display:none;">
+            <h3>🛡️ 機皇 AI 風控警示</h3>
+            <p id="risk-msg" class="risk-text"></p>
+        </section>
+
+        <!-- 三大定律科學計價引擎 -->
+        <section class="card pricing-card">
+            <h3>📐 AI 三大定律動態計價引擎</h3>
+            <div class="pricing-principles">
+                <div class="p-item"><span>1. 邊際效用 (距離):</span> <strong id="dist-tag">1.2 km (鄰里短距)</strong></div>
+                <div class="p-item"><span>2. 供需彈性 (天候):</span> <strong id="weather-tag">晴天 (1.0x 標準)</strong></div>
+                <div class="p-item"><span>3. 牛頓冷卻 (熱藏):</span> <strong id="thermal-tag">出鍋 60°C+ 源頭鎖熱直達</strong></div>
+            </div>
+            <div class="price-breakdown">
+                <p>總服務費：<span id="total-fee" class="price-highlight">$45 NTD</span></p>
+                <p class="share-text">💰 順路夥伴 80% 收益：<strong id="driver-share">$36 NTD</strong> | 平台 20%：$9 NTD</p>
+            </div>
+        </section>
+
+        <!-- 任務資訊卡片（去識別化顯示） -->
+        <section class="card task-card">
+            <div class="task-header">
+                <h2>單號：#SST-0813-V12</h2>
+                <span class="tag-hot">🍳 鄰里家常手作</span>
+            </div>
+            <div class="task-info">
+                <p><strong>店家/來源：</strong> 巷弄特約店家_A (永和區)</p>
+                <p><strong>品項：</strong> 當日手作水煮蛋 (3顆裝)</p>
+                <p><strong>買家資訊：</strong> <span class="tag-safe">🔒 去識別化保護中</span></p>
+                <p><strong>時效承諾：</strong> 08:15 AM 出鍋 <span class="timer-text">(1小時新鮮防線)</span></p>
+            </div>
+        </section>
+
+        <!-- 專業法務：法定禁品免責切結勾選 -->
+        <section class="card legal-card">
+            <h3>⚖️ 託帶標的物合法性切結 (必勾選)</h3>
+            <div class="legal-box">
+                <input type="checkbox" id="legal-agreement">
+                <label for="legal-agreement">
+                    本人切結保證託帶標的物<strong>絕非屬毒品、槍砲刀械、管制藥品、洗錢贓款、大額現鈔或易燃易爆等法定禁品</strong>。非但違反主管機關管制規範，亦屬各項法律明定禁止流通或運送之客體。若有不實願負一切刑民事全責，平台得逕行移送檢警偵辦。
+                </label>
+            </div>
+        </section>
+
+        <!-- 地圖卡片 -->
+        <section class="card map-card">
+            <h3>📍 AI 最優順路線圖 (直達避免冷卻)</h3>
+            <div id="map"></div>
+        </section>
+
+        <!-- 食安雙重照片與親簽存證 -->
+        <section class="card photo-card">
+            <h3>📷 食安防拆照片與賣家親簽 (責任鏈存證)</h3>
+            <div class="photo-grid">
+                <div class="photo-box">
+                    <label for="photo-a">照片 A：封口前內容物</label>
+                    <input type="file" id="photo-a" accept="image/*" capture="environment">
+                </div>
+                <div class="photo-box">
+                    <label for="photo-b">照片 B：賣家親簽貼紙</label>
+                    <input type="file" id="photo-b" accept="image/*" capture="environment">
+                </div>
+            </div>
+            <div class="signature-box">
+                <label>🖊️ 賣家/親煮者交接簽名：</label>
+                <canvas id="sig-canvas" width="300" height="80"></canvas>
+                <button class="btn-clear" onclick="clearSignature()">重簽</button>
+            </div>
+        </section>
+
+        <!-- 狀態回報與雙交接模式 -->
+        <section class="card action-card">
+            <h3>⏱️ 狀態回報與模式交接</h3>
+            <div class="btn-group">
+                <button class="btn btn-warning" onclick="reportStatus('排隊中', 5)">⏳ 排隊中 (+5分)</button>
+                <button class="btn btn-info" onclick="reportStatus('製作中/鎖熱中', 10)">🍳 製作鎖熱中 (+10分)</button>
+            </div>
+            
+            <div class="交接-group">
+                <p class="section-title">🤝 選擇交接模式 (承攬媒合互助)</p>
+                <button class="btn btn-success" onclick="reportStatus('模式A：定點門口零接觸放置', 0)">🏠 模式 A：門口零接觸放置</button>
+                <button class="btn btn-primary" onclick="triggerFaceToFaceValidation()">📍 模式 B：鄰近點面交 (折抵 $10 / 驗證證件)</button>
+            </div>
+
+            <!-- 買家證件彈窗 -->
+            <div id="validation-modal" class="modal">
+                <div class="modal-content card">
+                    <h3>👤 買家證件驗證拍照防線 (個資保護)</h3>
+                    <p class="warning-text">請出示證件核對姓名，<strong>請用手指遮蔽身分證字號與生日</strong>。照片直傳機皇加密儲存，夥伴手機不留底圖。</p>
+                    <input type="file" id="buyer-id-photo" accept="image/*" capture="environment">
+                    <label for="buyer-id-photo" class="upload-label">📷 拍攝姓名與單號備查</label>
+                    <button class="btn-confirm" onclick="confirmModalValidation()">✅ 完成驗證並交接</button>
+                    <button class="btn-cancel" onclick="closeValidation()">取消</button>
+                </div>
+            </div>
+
+            <!-- 食安檢舉與煞車按鈕 -->
+            <button class="btn btn-danger" onclick="submitFoodSafetyReport('store_A')">
+                🚨 通報食安瑕疵 / 負評 (AI 預警複審)
+            </button>
+            <button class="btn btn-secondary" onclick="reportBrake()">
+                🛑 煞車退單：貼紙破損 / 外溢 > 1/3 / 未親簽
+            </button>
+        </section>
+
+        <!-- 即時系統 Log -->
+        <div id="status-log" class="status-log">系統運行中：地端機皇 AI 連線正常，法務與食安防線鎖定中。</div>
+
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
