@@ -1,0 +1,15 @@
+{
+  "name": "順時達 SST-V15 安全科技互助網",
+  "short_name": "順時達 SST",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#FF6B00",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2830/2830305.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
