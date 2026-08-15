@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>順時達 SST - 台灣限定試辦專區</title>
+    <title>順時達 SST-V14 台灣生活圈全流程互助網</title>
     <meta name="theme-color" content="#FF6B00">
-    <!-- 開源免費 Leaflet 地圖 (免金鑰、不報錯) -->
+    <!-- Leaflet 開源地圖 -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -13,134 +13,128 @@
 <body>
 
     <header class="app-header">
-        <div class="logo">⚡ 順時達 SST (🇹🇼 台灣試辦區)</div>
-        <button class="sos-btn" onclick="triggerSOS()">🚨 SOS 緊急求救</button>
+        <div class="logo">⚡ 順時達 SST-V14 (🇹🇼 台灣試辦區)</div>
+        <button class="sos-btn" onclick="triggerSOS()">🚨 SOS 警報</button>
     </header>
 
     <main class="app-container">
 
-        <!-- 試辦區域公告 -->
-        <section class="card pilot-card" style="background:#1A252F; border-left:4px solid #3498DB;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="font-size:0.95rem; color:#3498DB;">📍 台灣首戰場試辦營運公告</h3>
-                <span style="background:#2980B9; color:#FFF; font-size:0.7rem; padding:2px 6px; border-radius:4px;">首階段限定</span>
+        <!-- 角色切換分頁 -->
+        <div class="role-tabs">
+            <button id="tab-buyer" class="tab-btn active" onclick="switchRole('buyer')">🛒 購物者發起需求</button>
+            <button id="tab-driver" class="tab-btn" onclick="switchRole('driver')">🛵 運送者接單配送</button>
+        </div>
+
+        <!-- 區塊 1：購物者發起託帶需求 (含音訊廣播) -->
+        <section id="buyer-section" class="card">
+            <h3>📢 1. 購物者：發起託帶需求單</h3>
+            <div class="form-group">
+                <label>📍 取貨地點/店家名稱：</label>
+                <input type="text" id="req-pickup" value="新北市永和區樂華特約點">
             </div>
-            <p style="font-size:0.75rem; color:#BDC3C7; margin-top:5px; line-height:1.4;">
-                本服務現階段僅限<strong>中華民國台灣地區（雙北示範生活圈）</strong>試辦。恪遵台灣現行法令，受台灣新北地方法院管轄。
-            </p>
+            <div class="form-group">
+                <label>🍲 託帶品項描述：</label>
+                <input type="text" id="req-item" value="手作清淡營養水煮餐盒 (鎖熱急件)">
+            </div>
+            <div class="form-group">
+                <label>🏠 送達目的地/地址：</label>
+                <input type="text" id="req-dropoff" value="新北市永和區中山路一段">
+            </div>
+            <div class="form-group">
+                <label>💰 願付服務費 (NTD)：</label>
+                <input type="number" id="req-fee" value="45">
+            </div>
+            <button class="btn btn-primary" onclick="publishBuyerOrder()">
+                🔊 發布需求並廣播音訊 (上貼網頁)
+            </button>
         </section>
 
-        <!-- 三大定律科學計價引擎 -->
-        <section class="card pricing-card">
-            <div class="card-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <h3 style="color:#FF6B00; font-size:0.95rem;">📐 AI 三大定律動態計價引擎</h3>
-                <span style="color:#27AE60; font-size:0.75rem; font-weight:bold;">🟢 台灣在地算力</span>
+        <!-- 區塊 2：運送者大廳 (查詢路線與接單) -->
+        <section id="driver-section" class="card" style="display:none;">
+            <div class="card-title-row">
+                <h3>📋 2. 待接訂單大廳 (AI 順路線查詢)</h3>
+                <span class="live-pulse">🟢 算力連線中</span>
             </div>
-            <div class="pricing-principles" style="display:flex; flex-direction:column; gap:4px; font-size:0.8rem; color:#AAAAAA; margin-bottom:10px;">
-                <div><span>1. 邊際效用 (短距):</span> <strong style="color:#FFF;">1.2 km (鄰里生活圈)</strong></div>
-                <div><span>2. 供需彈性 (天候):</span> <strong style="color:#FFF;">晴天 (1.0x 標準費率)</strong></div>
-                <div><span>3. 牛頓冷卻 (時效):</span> <strong style="color:#FFF;">出鍋 60°C+ 鎖熱直達</strong></div>
-            </div>
-            <div class="price-breakdown" style="background:#2A2A2A; border-radius:6px; padding:10px;">
-                <p>總服務資費：<span style="font-size:1.3rem; font-weight:bold; color:#FF6B00;">$45 NTD</span></p>
-                <p style="font-size:0.8rem; color:#888; margin-top:4px;">💰 順路夥伴 80% 收益：<strong style="color:#27AE60;">$36 NTD</strong> | 平台 20%：$9 NTD</p>
-            </div>
-        </section>
-
-        <!-- 任務資訊卡片 -->
-        <section class="card task-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <h2 style="font-size:1rem; color:#FFF;">單號：#SST-TW01-0815</h2>
-                <span style="background:#E67E22; color:#FFF; font-size:0.7rem; padding:2px 6px; border-radius:4px;">🍲 現煮手作</span>
-            </div>
-            <div style="font-size:0.82rem; color:#CCC; line-height:1.6;">
-                <p><strong>取貨點：</strong> 台灣新北市永和區特約點 (GPS 鎖定中)</p>
-                <p><strong>品項：</strong> 營養手作水煮蛋餐盒 (出鍋鎖熱)</p>
-                <p><strong>收件人：</strong> <span style="color:#3498DB; font-weight:bold;">🔒 台灣個資法去識別化保護</span></p>
-            </div>
-        </section>
-
-        <!-- 台灣法定禁品切結防線 -->
-        <section class="card legal-card">
-            <h3 style="color:#E74C3C; font-size:0.9rem; margin-bottom:6px;">⚖️ 台灣法令切結與法定禁品排除 (必勾選)</h3>
-            <div style="display:flex; gap:8px; align-items:flex-start;">
-                <input type="checkbox" id="legal-agreement" style="margin-top:3px; transform:scale(1.2);">
-                <label for="legal-agreement" style="font-size:0.75rem; color:#BDC3C7; line-height:1.4;">
-                    本人切結保證委託標的物<strong>絕非毒品危害防制條例、槍砲刀械、洗錢防制法所管制之毒品、槍彈、贓款、未完稅現鈔等法定禁品</strong>。若有不實願負個人名下全部財產之無限清償責任與新台幣 100 萬元懲罰性違約金，並授權移送台灣檢警機關偵辦。
-                </label>
+            <div id="order-lobby" class="order-box">
+                <p><strong>單號：</strong> <span id="lobby-id">#SST-TW-0816</span></p>
+                <p><strong>品項：</strong> <span id="lobby-item">手作清淡營養水煮餐盒</span></p>
+                <p><strong>路線：</strong> <span id="lobby-route">樂華特約點 ➔ 中山路一段 (1.2 km)</span></p>
+                <p><strong>收益預估：</strong> <span id="lobby-fee" class="price-highlight">$45 NTD (實得 $36)</span></p>
+                <button class="btn btn-success" onclick="acceptOrder()">
+                    ⚡ 查閱路線並確認接單 (響鈴通知)
+                </button>
             </div>
         </section>
 
-        <!-- 台灣在地 Leaflet 地圖 -->
+        <!-- 區塊 3：AI 順路路線圖 (Leaflet) -->
         <section class="card map-card">
-            <h3 style="font-size:0.9rem; color:#FF6B00; margin-bottom:8px;">📍 台灣示範區順路線圖 (新北永和生活圈)</h3>
+            <h3>📍 AI 最優鎖熱順路線圖 (永和示範生活圈)</h3>
             <div id="map" style="height: 190px; width: 100%; border-radius: 8px; z-index: 1;"></div>
         </section>
 
-        <!-- 食安雙重照片與親簽存證 -->
-        <section class="card photo-card">
-            <h3 style="font-size:0.9rem; color:#FF6B00; margin-bottom:10px;">📷 食安防拆照片 (自動壓印時間戳記)</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-                <div style="background:#2A2A2A; padding:8px; border-radius:6px; border:1px dashed #555;">
-                    <label style="font-size:0.75rem; color:#CCC; display:block; margin-bottom:4px;">照片 A：封口前內容物</label>
-                    <input type="file" id="photo-a" accept="image/*" capture="environment" style="font-size:0.7rem; width:100%; color:#888;">
-                </div>
-                <div style="background:#2A2A2A; padding:8px; border-radius:6px; border:1px dashed #555;">
-                    <label style="font-size:0.75rem; color:#CCC; display:block; margin-bottom:4px;">照片 B：出餐親簽貼紙</label>
-                    <input type="file" id="photo-b" accept="image/*" capture="environment" style="font-size:0.7rem; width:100%; color:#888;">
-                </div>
-            </div>
-            <div class="signature-box">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                    <label style="font-size:0.75rem; color:#CCC;">🖊️ 出餐親煮者騎縫親筆簽名：</label>
-                    <button class="btn-clear" onclick="clearSignature()" style="background:#555; color:#FFF; border:none; padding:2px 8px; border-radius:4px; font-size:0.7rem; cursor:pointer;">重簽</button>
-                </div>
-                <canvas id="sig-canvas" width="320" height="90" style="background:#FFF; border-radius:6px; width:100%; border:1px solid #777; touch-action:none;"></canvas>
-            </div>
-        </section>
-
-        <!-- 狀態回報與交付模式 -->
-        <section class="card action-card">
-            <h3 style="font-size:0.9rem; color:#FF6B00; margin-bottom:10px;">⏱️ 狀態回報與交付模式</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-                <button class="btn btn-warning" onclick="reportStatus('店家排隊中', 5)" style="background:#F39C12; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer;">⏳ 排隊中 (+5分)</button>
-                <button class="btn btn-info" onclick="reportStatus('出鍋鎖熱直達中', 10)" style="background:#2980B9; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer;">🍲 出鍋配送 (+10分)</button>
-            </div>
+        <!-- 區塊 4：SST 標準送貨與防禦流程 -->
+        <section id="delivery-flow-section" class="card" style="display:none;">
+            <h3>🛵 3. SST 送貨防禦流程執行中</h3>
             
-            <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
-                <p style="font-size:0.8rem; color:#AAA;">🤝 選擇交付模式</p>
-                <button class="btn btn-success" onclick="reportStatus('模式A：定點門口零接觸放置', 0)" style="background:#27AE60; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer;">🏠 模式 A：門口零接觸放置 (推薦)</button>
-                <button class="btn btn-primary" onclick="triggerFaceToFaceValidation()" style="background:#3498DB; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer;">📍 模式 B：鄰近點面交 (折抵 $10 NTD)</button>
-                <button class="btn btn-abandon" onclick="triggerWaitAndLeave()" style="background:#D35400; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer;">⏳ 買家失聯逾 10 分鐘免責留置</button>
+            <!-- 法定禁品切結 -->
+            <div class="legal-box" style="margin-bottom:10px;">
+                <input type="checkbox" id="legal-agreement">
+                <label for="legal-agreement">
+                    本人切結委託物<strong>非毒品、槍砲刀械、洗錢贓款等法定禁品</strong>。若有不實願負個人名下全部財產無限清償責任與百萬違約金。
+                </label>
             </div>
 
-            <!-- 風控檢舉與煞車按鈕 -->
-            <button class="btn btn-danger" onclick="submitFoodSafetyReport('store_A')" style="background:#C0392B; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer; width:100%; margin-bottom:6px;">
-                🚨 通報重大食安瑕疵 / 負評 (AI 警報立案)
-            </button>
-            <button class="btn btn-secondary" onclick="reportBrake()" style="background:#7F8C8D; color:#FFF; border:none; padding:10px; border-radius:6px; font-weight:bold; font-size:0.82rem; cursor:pointer; width:100%;">
-                🛑 煞車退單：封條破損 / 外溢 > 1/3 (責任凍結)
-            </button>
+            <!-- 食安存證照片與簽名 -->
+            <div class="photo-grid">
+                <div class="photo-box">
+                    <label>照片 A：封口前內容物</label>
+                    <input type="file" id="photo-a" accept="image/*">
+                </div>
+                <div class="photo-box">
+                    <label>照片 B：親簽貼紙</label>
+                    <input type="file" id="photo-b" accept="image/*">
+                </div>
+            </div>
+
+            <div class="signature-box" style="margin: 8px 0;">
+                <div class="sig-header">
+                    <label>🖊️ 出餐人騎縫親簽：</label>
+                    <button class="btn-clear" onclick="clearSignature()">重簽</button>
+                </div>
+                <canvas id="sig-canvas" width="320" height="80"></canvas>
+            </div>
+
+            <!-- 交付模式選擇 -->
+            <div class="delivery-modes">
+                <button class="btn btn-success" onclick="reportStatus('模式A：定點門口零接觸放置', 0)">🏠 模式 A：零接觸門口放置</button>
+                <button class="btn btn-primary" onclick="reportStatus('模式B：面交完成', 0)">📍 模式 B：鄰近點面交 (折抵 $10)</button>
+                <button class="btn btn-care" onclick="reportStatus('模式C：長者關懷平安送達', 0)">👵 模式 C：長者應門平安交付</button>
+                <button class="btn btn-abandon" onclick="triggerWaitAndLeave()">⏳ 買家失聯逾 10 分鐘免責留置</button>
+            </div>
+
+            <button class="btn btn-danger" onclick="submitFoodSafetyReport('store_A')">🚨 通報食安瑕疵</button>
+            <button class="btn btn-secondary" onclick="reportBrake()">🛑 煞車退單 (責任凍結)</button>
         </section>
 
         <!-- 即時系統 Log -->
-        <div id="status-log" class="status-log" style="font-size:0.75rem; color:#00FF66; background:#1A1A1A; border:1px solid #333; padding:10px; border-radius:6px; font-family:monospace;">系統狀態：台灣試辦專區連線中，Leaflet 責任鏈鎖定正常。</div>
+        <div id="status-log" class="status-log">系統狀態：SST-V14 運作中，等待發起需求或接單。</div>
 
     </main>
 
     <script src="app.js"></script>
     <script>
-        // 初始化台灣在地 OpenStreetMap 地圖 (中心點設於新北永和生活圈)
         window.addEventListener('DOMContentLoaded', () => {
             if (typeof L !== 'undefined') {
-                const map = L.map('map').setView([25.0086, 121.5173], 15);
+                window.mapInstance = L.map('map').setView([25.0086, 121.5173], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '© OpenStreetMap 台灣試辦'
-                }).addTo(map);
-                L.marker([25.0086, 121.5173]).addTo(map)
-                    .bindPopup('<b>順時達台灣示範點 (新北永和)</b><br>AI 鎖熱順路線直達')
+                }).addTo(window.mapInstance);
+                L.marker([25.0086, 121.5173]).addTo(window.mapInstance)
+                    .bindPopup('<b>永和特約點 (取貨)</b><br>AI 鎖熱直達')
                     .openPopup();
+                L.marker([25.0120, 121.5140]).addTo(window.mapInstance)
+                    .bindPopup('<b>中山路一段 (送達)</b>');
             }
         });
     </script>
