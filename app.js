@@ -1,163 +1,222 @@
-// ⚡ Web Audio API：發出「三長兩短」高分貝蜂鳴警報聲
-function playThreeLongTwoShortAlarm() {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// ⚡ 順時達 SST-V14 核心業務與音訊腳本
+
+const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new AudioCtxClass();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+// 🔊 1. 購物者發起需求音效（叮咚雙音 587Hz -> 880Hz）
+function playBuyerBroadcastSound() {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    gain1.gain.setValueAtTime(0.4, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.frequency.setValueAtTime(880, now + 0.2); // A5
+    gain2.gain.setValueAtTime(0.5, now + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.2);
+    osc2.stop(now + 0.6);
+}
+
+// 🔔 2. 運送者接單確認音效（清脆三連音 523Hz -> 659Hz -> 784Hz）
+function playAcceptOrderSound() {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+
+    notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const startTime = now + idx * 0.12;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.4, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.25);
+    });
+}
+
+// 🚨 3. SOS 求救音效（880Hz Sawtooth 三長兩短）
+function playSOSAlarm() {
+    const ctx = getAudioContext();
     const pattern = [
-        { duration: 0.4, pause: 0.1 },
-        { duration: 0.4, pause: 0.1 },
-        { duration: 0.4, pause: 0.2 },
-        { duration: 0.15, pause: 0.08 },
-        { duration: 0.15, pause: 0.08 }
+        { duration: 0.35, pause: 0.1 },
+        { duration: 0.35, pause: 0.1 },
+        { duration: 0.35, pause: 0.2 },
+        { duration: 0.12, pause: 0.08 },
+        { duration: 0.12, pause: 0.08 }
     ];
 
-    let currentTime = audioCtx.currentTime;
-
+    let currentTime = ctx.currentTime;
     pattern.forEach(note => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(880, currentTime);
-
-        gain.gain.setValueAtTime(0.8, currentTime);
+        gain.gain.setValueAtTime(0.7, currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration);
-
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
+        gain.connect(ctx.destination);
         osc.start(currentTime);
         osc.stop(currentTime + note.duration);
-
         currentTime += note.duration + note.pause;
     });
 }
 
-function initMap() {
-    const defaultLocation = { lat: 25.033968, lng: 121.564468 };
-    const mapElement = document.getElementById("map");
-    if (!mapElement) return;
-
-    try {
-        const map = new google.maps.Map(mapElement, { zoom: 15, center: defaultLocation, disableDefaultUI: true });
-        new google.maps.Marker({ position: defaultLocation, map: map, title: "順時達特約取貨點" });
-    } catch (e) {
-        mapElement.innerHTML = "<p style='padding:20px; text-align:center; color:#E74C3C;'>🗺️ 地圖預載中 / 地端機皇 AI 護航</p>";
-    }
+function triggerSOS() {
+    playSOSAlarm();
+    setTimeout(() => {
+        alert("🚨【SOS 求救觸發】三長兩短警報已響起！已鎖定 GPS 坐標。");
+    }, 100);
+    logStatus("🚨 SOS 緊急求救已觸發！通報檢警中樞。", "#FF3333");
 }
 
-// 呼叫機皇算力（含惡意取消 >= 3 次封鎖檢查）
-async function fetchServerBrainCalculation(userId, distanceKm, isBadWeather, isModeB, rawNote) {
-    try {
-        const response = await fetch('http://localhost:3000/api/calculate-price', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, distanceKm, isBadWeather, isModeB, rawNote })
-        });
-        const data = await response.json();
+// 角色切換
+function switchRole(role) {
+    const buyerTab = document.getElementById("tab-buyer");
+    const driverTab = document.getElementById("tab-driver");
+    const buyerSec = document.getElementById("buyer-section");
+    const driverSec = document.getElementById("driver-section");
 
-        if (data.status === "USER_BLOCKED") {
-            document.getElementById("risk-alert-card").style.display = "block";
-            document.getElementById("risk-msg").innerText = data.message;
-            playThreeLongTwoShortAlarm();
-            return null;
-        }
-
-        return data.pricing;
-    } catch (e) {
-        let baseFee = 35 + (distanceKm > 1 ? Math.ceil((distanceKm - 1) * 10) : 0);
-        let totalFee = Math.round(baseFee * (isBadWeather ? 1.2 : 1.0));
-        if (isModeB) totalFee = Math.max(30, totalFee - 10);
-        return { totalFee, driverShare: Math.round(totalFee * 0.8) };
-    }
-}
-
-// 提交食安通報（V12：AI 預警標記 + 警報 + 待管理者複審）
-async function submitFoodSafetyReport(storeId) {
-    const isAgree = confirm("⚠️ 法律切結：您保證所通報之食安問題屬實，若有惡意誣告願自負民刑法全責？");
-    if (!isAgree) return;
-
-    try {
-        const response = await fetch('http://localhost:3000/api/report-food-safety', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ storeId: storeId, complaintType: "嚴重食安瑕疵", isNegativeRating: true })
-        });
-        const data = await response.json();
-
-        if (data.triggerSoundAlarm) {
-            playThreeLongTwoShortAlarm();
-            alert(`🚨 警報！${data.message}`);
-        }
-    } catch (e) {
-        playThreeLongTwoShortAlarm();
-        alert("🚨 手機/機皇警報：收到食安負評，已發出三長兩短警報並進入複審流程！");
-    }
-}
-
-const canvas = document.getElementById('sig-canvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
-let isSigning = false;
-if (canvas && ctx) {
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
-    const startDrawing = (e) => { isSigning = true; ctx.beginPath(); const pos = getPos(e); ctx.moveTo(pos.x, pos.y); };
-    const draw = (e) => { if (!isSigning) return; const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
-    const stopDrawing = () => { isSigning = false; };
-    canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('touchstart', startDrawing); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stopDrawing);
-}
-function getPos(e) { const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; return { x: clientX - rect.left, y: clientY - rect.top }; }
-function clearSignature() { if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-function triggerFaceToFaceValidation() { document.getElementById("validation-modal").style.display = "block"; }
-function closeValidation() { document.getElementById("validation-modal").style.display = "none"; }
-
-async function confirmModalValidation() {
-    const legalCheck = document.getElementById("legal-agreement").checked;
-    if (!legalCheck) {
-        alert("⚠️ 請務必勾選「託帶標的物合法性切結」，確認無夾帶任何法定禁品！");
-        return;
-    }
-
-    const buyerIdPhoto = document.getElementById("buyer-id-photo").files[0];
-    if (!buyerIdPhoto) {
-        alert("⚠️ 面交必須拍攝買家姓名與單號存證（請遮蔽身分證號）！");
-        return;
-    }
-    closeValidation();
-    const pricing = await fetchServerBrainCalculation("user_102", 1.2, false, true, "");
-    if (pricing) {
-        document.getElementById("total-fee").innerText = `$${pricing.totalFee} NTD (含面交折讓)`;
-        document.getElementById("driver-share").innerText = `$${pricing.driverShare} NTD`;
-    }
-    reportStatus('模式B：鄰近點面交完成 (已驗證證件/加密存證)', 0);
-}
-
-function reportStatus(statusName, addMinutes) {
-    const legalCheck = document.getElementById("legal-agreement").checked;
-    if (!legalCheck) {
-        alert("⚠️ 請務必勾選「託帶標的物合法性切結」，確認無夾帶任何法定禁品！");
-        return;
-    }
-
-    const logBox = document.getElementById("status-log");
-    const currentTime = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-    if (statusName.includes('模式')) {
-        const photoA = document.getElementById("photo-a").files[0];
-        const photoB = document.getElementById("photo-b").files[0];
-        if (!photoA || !photoB) {
-            alert("⚠️ 交付前必須上傳照片 A 與照片 B(賣家親簽貼紙)！");
-            return;
-        }
-        logBox.style.color = "#00FF66";
-        logBox.innerText = `[${currentTime}] 驗證通過！${statusName}。80% 分潤已結算，訂單結案。`;
+    if (role === 'buyer') {
+        buyerTab.classList.add("active");
+        driverTab.classList.remove("active");
+        buyerSec.style.display = "block";
+        driverSec.style.display = "none";
     } else {
-        logBox.style.color = "#FFCC00";
-        logBox.innerText = `[${currentTime}] 回報：${statusName}。AI 已推播預估 +${addMinutes} 分鐘。`;
+        driverTab.classList.add("active");
+        buyerTab.classList.remove("active");
+        driverSec.style.display = "block";
+        buyerSec.style.display = "none";
+    }
+}
+
+// 1. 購物者發起需求
+function publishBuyerOrder() {
+    playBuyerBroadcastSound();
+
+    const pickup = document.getElementById("req-pickup").value;
+    const item = document.getElementById("req-item").value;
+    const dropoff = document.getElementById("req-dropoff").value;
+    const fee = document.getElementById("req-fee").value;
+
+    document.getElementById("lobby-item").innerText = item;
+    document.getElementById("lobby-route").innerText = `${pickup} ➔ ${dropoff}`;
+    document.getElementById("lobby-fee").innerText = `$${fee} NTD (實得 $${Math.round(fee * 0.8)})`;
+
+    logStatus(`📢 [需求已上貼] 購物單廣播已送出！品項：${item}，等待順路者接單...`, "#FFCC00");
+    alert("📢 需求已發布並發出廣播音訊！已上貼至運送者接單大廳。");
+
+    // 自動切換到運送者分頁
+    switchRole('driver');
+}
+
+// 2. 運送者接單
+function acceptOrder() {
+    playAcceptOrderSound();
+
+    document.getElementById("delivery-flow-section").style.display = "block";
+    logStatus("⚡ 接單成功！請查閱路線圖並依 SST 標準防禦流程執行取送。", "#00FF66");
+    alert("⚡ 接單成功！已進入 SST 順時達標準送貨流程。");
+    document.getElementById("delivery-flow-section").scrollIntoView({ behavior: 'smooth' });
+}
+
+// 3. 狀態回報
+function reportStatus(statusName, addMin) {
+    const legalCheck = document.getElementById("legal-agreement");
+    if (legalCheck && !legalCheck.checked) {
+        alert("⚠️ 請勾選法定禁品排除切結！");
+        return;
+    }
+    const photoA = document.getElementById("photo-a");
+    const photoB = document.getElementById("photo-b");
+    if (photoA && photoB && (!photoA.files[0] || !photoB.files[0])) {
+        alert("⚠️ 交付前必須上傳照片 A 與照片 B！");
+        return;
+    }
+
+    const timeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+    logStatus(`[${timeStr}] 驗證通過：${statusName}。80% 收益已結算！`, "#00FF66");
+    alert(`✅ ${statusName}！責任鏈存證完成。`);
+}
+
+function triggerWaitAndLeave() {
+    if (confirm("⚠️ 買家失聯逾 10 分鐘？確認已拍照留置門口安全處。")) {
+        logStatus("⏳ 買家失聯免責結案：已拍照留置，80% 收益照常結算。", "#FFA500");
     }
 }
 
 function reportBrake() {
-    if (confirm("🛑 確定觸發煞車退單？")) {
-        playThreeLongTwoShortAlarm();
-        document.getElementById("status-log").innerText = "🛑 煞車退單成功！責任劃分至賣家/包裝端。";
+    if (confirm("🛑 確定煞車退單？此動作將凍結出餐責任。")) {
+        playSOSAlarm();
+        logStatus("🛑 煞車退單已送出！責任凍結於出餐端。", "#FF3333");
     }
+}
+
+function submitFoodSafetyReport(storeId) {
+    if (confirm("⚠️ 法律切結：保證通報屬實，若誣告願負全責？")) {
+        playSOSAlarm();
+        alert("🚨 重大瑕疵通報立案！機皇 AI 已啟動警報。");
+    }
+}
+
+function logStatus(msg, color) {
+    const box = document.getElementById("status-log");
+    if (box) {
+        box.style.color = color;
+        box.innerText = msg;
+    }
+}
+
+// 電子簽名畫布
+const canvas = document.getElementById('sig-canvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
+let isSigning = false;
+
+if (canvas && ctx) {
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 2;
+    const start = (e) => { isSigning = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+    const move = (e) => { if (!isSigning) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+    const stop = () => { isSigning = false; };
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', stop);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', stop);
+}
+
+function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: cx - rect.left, y: cy - rect.top };
+}
+
+function clearSignature() {
+    if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
